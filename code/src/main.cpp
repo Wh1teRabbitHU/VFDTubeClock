@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "PCA9557.h"
+#include "VFDDisplay.h"
 
 #define PCA9557_I2C_ADDR	0x18
 
@@ -33,17 +34,32 @@ void setup() {
 	PCA9557_pinMode(PCA9557_I2C_ADDR, NEXT_BTN_PIN, PCA9557_INPUT_MODE);
 	PCA9557_pinMode(PCA9557_I2C_ADDR, SIGNAL_LED_PIN, PCA9557_OUTPUT_MODE);
 
+	PCA9557_writePin(PCA9557_I2C_ADDR, BLANK_PIN, 0);
+	PCA9557_writePin(PCA9557_I2C_ADDR, CLK_PIN, 0);
+	PCA9557_writePin(PCA9557_I2C_ADDR, LOAD_PIN, 0);
+	PCA9557_writePin(PCA9557_I2C_ADDR, DIN_PIN, 0);
+
+	VFDDisplay_init(CLK_PIN, LOAD_PIN, DIN_PIN);
+
 	Serial.begin(9600);
 }
 
-uint8_t portValue = 0;
+uint8_t number = 0;
+uint8_t digit = 0;
 
 void loop() {
-	PCA9557_writePin(PCA9557_I2C_ADDR, SIGNAL_LED_PIN, 0);
+	VFDDisplay_setNumber(PCA9557_I2C_ADDR, digit, number++);
 
-	delay(500);
+	if (number == 10) {
+		number = 0;
+		digit++;
 
-	PCA9557_writePin(PCA9557_I2C_ADDR, SIGNAL_LED_PIN, 1);
+		if (digit == 14) {
+			digit = 0;
+		}
+	}
 
-	delay(500);
+	//PCA9557_writePin(PCA9557_I2C_ADDR, SIGNAL_LED_PIN, number % 2);
+
+	delay(300);
 }
