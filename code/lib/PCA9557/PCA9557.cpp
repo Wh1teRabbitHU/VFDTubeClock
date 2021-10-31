@@ -2,6 +2,7 @@
 
 void PCA9557_init() {
 	Wire.begin();
+	Wire.setClock(5000000);
 }
 
 uint8_t PCA9557_readPort(uint8_t i2cAddress) {

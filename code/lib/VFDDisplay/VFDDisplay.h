@@ -26,7 +26,7 @@
 #define GRID_9_POS		7
 #define GRID_10_POS		6
 #define GRID_11_POS		5
-#define GRID_12_POS		4
+#define GRID_12_POS 	4
 #define GRID_13_POS		9
 #define GRID_14_POS		10
 
