@@ -109,6 +109,15 @@ void VFDDisplay_setNumber(uint8_t i2cAddress, uint8_t pos, uint8_t number) {
 			VFDDisplay_setSinglePosition(SEG_B_POS, 1);
 			VFDDisplay_setSinglePosition(SEG_C_S_POS, 1);
 			VFDDisplay_setSinglePosition(SEG_D_POS, 1);
+			VFDDisplay_setSinglePosition(SEG_E_POS, 1);
+			VFDDisplay_setSinglePosition(SEG_F_POS, 1);
+			VFDDisplay_setSinglePosition(SEG_G_M_POS, 1);
+			break;
+		case 9:
+			VFDDisplay_setSinglePosition(SEG_A_W_POS, 1);
+			VFDDisplay_setSinglePosition(SEG_B_POS, 1);
+			VFDDisplay_setSinglePosition(SEG_C_S_POS, 1);
+			VFDDisplay_setSinglePosition(SEG_D_POS, 1);
 			VFDDisplay_setSinglePosition(SEG_F_POS, 1);
 			VFDDisplay_setSinglePosition(SEG_G_M_POS, 1);
 			break;

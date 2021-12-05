@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include "NTPClient.h"
+#include "ESP8266WiFi.h"
+#include "WiFiUdp.h"
 
 #include "PCA9557.h"
 #include "VFDDisplay.h"
@@ -15,6 +18,26 @@
 #define SELECT_BTN_PIN		6
 #define NEXT_BTN_PIN		7
 #define SIGNAL_LED_PIN		4
+
+#define BTN_CHECK_INTERVAL	200
+#define BTN_LOCK_TIMEOUT	3000
+
+#define TIME_OFFSET_UNIT	3600
+
+#define GET_BIT_VALUE(binary, pos) (((binary >> pos) & 1) == 1 ? 1 : 0)
+
+const char *ssid     = "MikroTik-2GHz";
+const char *password = "31415926";
+
+WiFiUDP ntpUDP;
+
+uint8_t seconds, minutes, hours;
+uint16_t counter = 0;
+uint8_t buttonLocked = 0;
+uint8_t buttonLockCounter = 0;
+int8_t timeOffset = 1;
+
+NTPClient timeClient(ntpUDP, "de.pool.ntp.org", TIME_OFFSET_UNIT * timeOffset, 60000 * 60 * 24);
 
 void setup() {
 	pinMode(CLK_PIN, OUTPUT);
@@ -43,16 +66,92 @@ void setup() {
 	VFDDisplay_init(CLK_PIN, LOAD_PIN, DIN_PIN);
 
 	Serial.begin(9600);
+	WiFi.begin(ssid, password);
+
+	while ( WiFi.status() != WL_CONNECTED ) {
+		delay ( 500 );
+		Serial.print(".");
+	}
+
+	Serial.print(" Connected");
+
+	timeClient.begin();
+	// timeClient.setUpdateInterval(60000 * 60 * 24);
+	// timeClient.setTimeOffset(3600);
+	timeClient.forceUpdate();
 }
 
-uint8_t number = 0;
-uint8_t digit = 0;
+void checkButtons() {
+	if (counter % BTN_CHECK_INTERVAL != 0) {
+		return;
+	}
 
-uint8_t iteration = 0;
+	if (buttonLocked) {
+		return;
+	}
+
+	uint8_t portValue = PCA9557_readPort(PCA9557_I2C_ADDR);
+	// uint8_t prevValue = GET_BIT_VALUE(portValue, 5);
+	// uint8_t selectValue = GET_BIT_VALUE(portValue, 6);
+	uint8_t nextValue = GET_BIT_VALUE(portValue, 7);
+
+	// if (selectValue == 0) {
+	// 	if (timeOffset > -5) {
+	// 		timeOffset--;
+	// 	}
+
+	// 	timeClient.setTimeOffset(TIME_OFFSET_UNIT * timeOffset);
+
+	// 	buttonLocked = 1;
+	// }
+
+	// if (selectValue == 0) {
+	// 	PCA9557_writePin(PCA9557_I2C_ADDR, SIGNAL_LED_PIN, 1);
+	// 	timeClient.forceUpdate();
+	// 	PCA9557_writePin(PCA9557_I2C_ADDR, SIGNAL_LED_PIN, 0);
+
+	// 	buttonLocked = 1;
+	// }
+
+	if (nextValue == 1) {
+		timeOffset = timeOffset == 2 ? 1 : 2;
+
+		timeClient.setTimeOffset(TIME_OFFSET_UNIT * timeOffset);
+
+		buttonLocked = 1;
+	}
+}
 
 void loop() {
-	for (uint8_t i = 0; i < 14; i++) {
-		VFDDisplay_setNumber(PCA9557_I2C_ADDR, i, i % 9);
-		delay(1);
+	// checkButtons();
+
+	seconds = timeClient.getSeconds();
+	minutes = timeClient.getMinutes();
+	hours = timeClient.getHours();
+
+	if (hours == 0) {
+		timeClient.forceUpdate();
 	}
+
+	VFDDisplay_setNumber(PCA9557_I2C_ADDR, 0, seconds % 10);
+	VFDDisplay_setNumber(PCA9557_I2C_ADDR, 1, seconds / 10);
+
+	VFDDisplay_setNumber(PCA9557_I2C_ADDR, 3, minutes % 10);
+	VFDDisplay_setNumber(PCA9557_I2C_ADDR, 4, minutes / 10);
+
+	VFDDisplay_setNumber(PCA9557_I2C_ADDR, 6, hours % 10);
+	VFDDisplay_setNumber(PCA9557_I2C_ADDR, 7, hours / 10);
+
+	// delayMicroseconds(100);
+
+	// counter++;
+
+	// if (buttonLocked) {
+	// 	buttonLockCounter++;
+
+	// 	if (buttonLockCounter % BTN_LOCK_TIMEOUT == 0) {
+	// 		buttonLocked = 0;
+	// 		buttonLockCounter = 0;
+	// 	}
+	// }
 }
